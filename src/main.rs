@@ -107,7 +107,7 @@ fn main() -> Result<()> {
 
     match connection.initialize(server_capabilities) {
         Ok(initialize_result) => {
-            let params = serde_json::to_string_pretty(&initialize_result)?;
+            let params = serde_json::to_string(&initialize_result)?;
             info!("Initialized with params: {}", params);
             if let Err(e) = serve(connection) {
                 error!("{e:?}");
