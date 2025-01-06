@@ -5,7 +5,7 @@ use lsp_types::notification::{self, Notification as TypesNotification};
 use lsp_types::request::{self, Request as TypesRequest};
 use lsp_types::{
     CompletionItem, CompletionOptions, CompletionParams, CompletionResponse, ServerCapabilities,
-    TextDocumentItem, TextDocumentSyncKind, Uri,
+    TextDocumentSyncKind, Uri,
 };
 use regex::Regex;
 use std::collections::{HashMap, HashSet};
@@ -32,21 +32,15 @@ fn init_logger() {
     }
 }
 
-fn load_all_words(uri: Uri, docs: &HashMap<Uri, TextDocumentItem>) -> Result<HashSet<String>> {
-    let content = docs
-        .get(&uri)
-        .map(|doc| doc.text.clone())
-        .unwrap_or_default();
+fn load_all_words(uri: Uri, docs: &HashMap<Uri, String>) -> Result<HashSet<String>> {
+    let content = docs.get(&uri).expect("Document not found");
     Ok(Regex::new(r"[A-Za-z_][A-Za-z0-9_]+")?
         .find_iter(&content)
         .map(|m| m.as_str().to_owned())
         .collect::<HashSet<String>>())
 }
 
-fn create_completion_response(
-    req: Request,
-    docs: &HashMap<Uri, TextDocumentItem>,
-) -> Result<Message> {
+fn create_completion_response(req: Request, docs: &HashMap<Uri, String>) -> Result<Message> {
     let params = serde_json::from_value::<CompletionParams>(req.params)?;
     let words = load_all_words(params.text_document_position.text_document.uri, docs)?;
     let compres = CompletionResponse::Array(
@@ -81,11 +75,23 @@ fn serve(connection: Connection) -> Result<()> {
             },
             Message::Notification(not) => match not.method.as_str() {
                 notification::Exit::METHOD => (),
-                notification::DidChangeTextDocument::METHOD => (),
+                notification::DidChangeTextDocument::METHOD => {
+                    let params = serde_json::from_value::<lsp_types::DidChangeTextDocumentParams>(
+                        not.params,
+                    )?;
+
+                    docs.insert(
+                        params.text_document.uri.to_owned(),
+                        params.content_changes[0].text.clone(),
+                    );
+                }
                 notification::DidOpenTextDocument::METHOD => {
                     let params =
                         serde_json::from_value::<lsp_types::DidOpenTextDocumentParams>(not.params)?;
-                    docs.insert(params.text_document.uri.to_owned(), params.text_document);
+                    docs.insert(
+                        params.text_document.uri.to_owned(),
+                        params.text_document.text,
+                    );
                 }
                 _ => (),
             },
