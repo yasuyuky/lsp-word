@@ -32,10 +32,7 @@ fn init_logger() {
     }
 }
 
-fn load_all_words(
-    uri: lsp_types::Uri,
-    docs: &HashMap<Uri, TextDocumentItem>,
-) -> Result<HashSet<String>> {
+fn load_all_words(uri: Uri, docs: &HashMap<Uri, TextDocumentItem>) -> Result<HashSet<String>> {
     let content = docs
         .get(&uri)
         .map(|doc| doc.text.clone())
