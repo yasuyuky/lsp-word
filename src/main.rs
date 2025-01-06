@@ -5,10 +5,10 @@ use lsp_types::notification::{self, Notification as TypesNotification};
 use lsp_types::request::{self, Request as TypesRequest};
 use lsp_types::{
     CompletionItem, CompletionOptions, CompletionParams, CompletionResponse, ServerCapabilities,
-    TextDocumentSyncKind,
+    TextDocumentItem, TextDocumentSyncKind, Uri,
 };
 use regex::Regex;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 use std::{fs, path::Path};
 use tracing::{error, info};
@@ -32,18 +32,26 @@ fn init_logger() {
     }
 }
 
-fn load_all_words(uri: lsp_types::Uri) -> Result<HashSet<String>> {
-    let path = uri.path().as_str();
-    let content = fs::read_to_string(path)?;
+fn load_all_words(
+    uri: lsp_types::Uri,
+    docs: &HashMap<Uri, TextDocumentItem>,
+) -> Result<HashSet<String>> {
+    let content = docs
+        .get(&uri)
+        .map(|doc| doc.text.clone())
+        .unwrap_or_default();
     Ok(Regex::new(r"[A-Za-z_][A-Za-z0-9_]+")?
         .find_iter(&content)
         .map(|m| m.as_str().to_owned())
         .collect::<HashSet<String>>())
 }
 
-fn create_completion_response(req: Request) -> Result<Message> {
+fn create_completion_response(
+    req: Request,
+    docs: &HashMap<Uri, TextDocumentItem>,
+) -> Result<Message> {
     let params = serde_json::from_value::<CompletionParams>(req.params)?;
-    let words = load_all_words(params.text_document_position.text_document.uri)?;
+    let words = load_all_words(params.text_document_position.text_document.uri, docs)?;
     let compres = CompletionResponse::Array(
         words
             .iter()
@@ -62,20 +70,26 @@ fn create_completion_response(req: Request) -> Result<Message> {
 }
 
 fn serve(connection: Connection) -> Result<()> {
+    let mut docs = HashMap::new();
     for msg in &connection.receiver {
         match msg {
             Message::Request(req) => match req.method.as_str() {
                 request::Shutdown::METHOD => {
                     connection.handle_shutdown(&req)?;
                 }
-                request::Completion::METHOD => {
-                    connection.sender.send(create_completion_response(req)?)?
-                }
+                request::Completion::METHOD => connection
+                    .sender
+                    .send(create_completion_response(req, &docs)?)?,
                 _ => (),
             },
             Message::Notification(not) => match not.method.as_str() {
                 notification::Exit::METHOD => (),
                 notification::DidChangeTextDocument::METHOD => (),
+                notification::DidOpenTextDocument::METHOD => {
+                    let params =
+                        serde_json::from_value::<lsp_types::DidOpenTextDocumentParams>(not.params)?;
+                    docs.insert(params.text_document.uri.to_owned(), params.text_document);
+                }
                 _ => (),
             },
             _ => (),
