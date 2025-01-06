@@ -56,7 +56,7 @@ fn create_completion_response(req: Request) -> Result<Message> {
     let result = serde_json::to_value(compres).ok();
     Ok(Message::Response(Response {
         id: req.id,
-        result: result,
+        result,
         error: None,
     }))
 }
