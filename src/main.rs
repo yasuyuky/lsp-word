@@ -100,7 +100,7 @@ fn main() -> Result<()> {
             ..Default::default()
         }),
         text_document_sync: Some(lsp_types::TextDocumentSyncCapability::Kind(
-            TextDocumentSyncKind::INCREMENTAL,
+            TextDocumentSyncKind::FULL,
         )),
         ..Default::default()
     })?;
