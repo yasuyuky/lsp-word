@@ -18,7 +18,12 @@ fn create_log_file(base_path: &Path) -> anyhow::Result<fs::File> {
     let dir_path = base_path.join("lsp-word");
     fs::create_dir_all(&dir_path)?;
     let file_path = dir_path.join("lsp-word.log");
-    Ok(fs::File::create(file_path)?)
+    {
+        Ok(fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(file_path)?)
+    }
 }
 
 fn init_logger() {
