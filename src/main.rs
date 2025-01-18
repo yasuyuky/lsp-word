@@ -140,3 +140,25 @@ fn main() -> Result<()> {
     }
     Ok(io_threads.join()?)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_load_all_words() {
+        let uri = "file:///test".parse::<Uri>().unwrap();
+        let mut docs = HashMap::new();
+        docs.insert(uri.clone(), "fn main() { let test = 1; }".to_string());
+
+        let words = load_all_words(uri, &docs).unwrap();
+        let expected_words: HashSet<String> = ["fn", "main", "let", "test"]
+            .iter()
+            .cloned()
+            .map(String::from)
+            .collect();
+
+        assert_eq!(words, expected_words);
+    }
+}
