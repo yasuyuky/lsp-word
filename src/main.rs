@@ -144,6 +144,7 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
     use std::collections::HashMap;
 
     #[test]
@@ -160,5 +161,37 @@ mod tests {
             .collect();
 
         assert_eq!(words, expected_words);
+    }
+
+    #[test]
+    fn test_create_completion_response() {
+        let uri = "file:///test".parse::<Uri>().unwrap();
+        let mut docs = HashMap::new();
+        docs.insert(uri.clone(), "fn main() { let test = 1; }".to_string());
+
+        let req = Request {
+            id: 1.into(),
+            method: "textDocument/completion".to_string(),
+            params: serde_json::to_value(CompletionParams {
+                text_document_position: TextDocumentPositionParams {
+                    text_document: TextDocumentIdentifier { uri: uri.clone() },
+                    position: lsp_types::Position {
+                        line: 0,
+                        character: 0,
+                    },
+                },
+                work_done_progress_params: Default::default(),
+                partial_result_params: Default::default(),
+                context: None,
+            })
+            .unwrap(),
+        };
+
+        let response = create_completion_response(req, &docs).unwrap();
+        if let Message::Response(resp) = response {
+            assert!(resp.result.is_some());
+        } else {
+            panic!("Expected a response message");
+        }
     }
 }
