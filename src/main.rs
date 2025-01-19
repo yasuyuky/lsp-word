@@ -148,7 +148,16 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn test_load_all_words() {
+    fn test_create_log_file() {
+        let temp_dir = std::env::temp_dir();
+        let file = create_log_file(&temp_dir).unwrap();
+        assert!(file.metadata().unwrap().is_file());
+        let log_path = temp_dir.join("lsp-word").join("lsp-word.log");
+        assert!(log_path.exists());
+    }
+
+    #[test]
+    fn test_load_all_words_basic() {
         let uri = "file:///test".parse::<Uri>().unwrap();
         let mut docs = HashMap::new();
         docs.insert(uri.clone(), "fn main() { let test = 1; }".to_string());
