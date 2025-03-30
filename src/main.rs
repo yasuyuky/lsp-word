@@ -173,6 +173,16 @@ mod tests {
     }
 
     #[test]
+    fn test_load_all_words_empty() {
+        let uri = "file:///test".parse::<Uri>().unwrap();
+        let mut docs = HashMap::new();
+        docs.insert(uri.clone(), "".to_string());
+
+        let words = load_all_words(uri, &docs).unwrap();
+        assert!(words.is_empty());
+    }
+
+    #[test]
     fn test_create_completion_response() {
         let uri = "file:///test".parse::<Uri>().unwrap();
         let mut docs = HashMap::new();
