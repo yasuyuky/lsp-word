@@ -173,6 +173,29 @@ mod tests {
     }
 
     #[test]
+    fn test_load_all_words_empty() {
+        let uri = "file:///test".parse::<Uri>().unwrap();
+        let mut docs = HashMap::new();
+        docs.insert(uri.clone(), "".to_string());
+
+        let words = load_all_words(uri, &docs).unwrap();
+        assert!(words.is_empty());
+    }
+
+    #[test]
+    fn test_load_all_words_special_chars() {
+        let uri = "file:///test".parse::<Uri>().unwrap();
+        let mut docs = HashMap::new();
+        docs.insert(uri.clone(), "let x1 = 42; // @#$%".to_string());
+
+        let words = load_all_words(uri, &docs).unwrap();
+        let expected_words: HashSet<String> =
+            ["let", "x1"].iter().cloned().map(String::from).collect();
+
+        assert_eq!(words, expected_words);
+    }
+
+    #[test]
     fn test_create_completion_response() {
         let uri = "file:///test".parse::<Uri>().unwrap();
         let mut docs = HashMap::new();
