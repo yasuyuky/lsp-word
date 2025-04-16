@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-anyhow = "1.0.97"
+anyhow = "1.0.98"
 clap = { version = "4.5.36", features = ["derive"] }
 directories = "6.0.0"
 lsp-server = "0.7.8"
