@@ -55,12 +55,7 @@ fn create_completion_response(req: Request, docs: &HashMap<Uri, String>) -> Resu
             })
             .collect(),
     );
-    let result = serde_json::to_value(compres).ok();
-    Ok(Message::Response(Response {
-        id: req.id,
-        result,
-        error: None,
-    }))
+    Ok(Message::Response(Response::new_ok(req.id, compres)))
 }
 
 fn serve(connection: Connection) -> Result<()> {
@@ -144,6 +139,7 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use lsp_server::ResponseKind;
     use lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
     use std::collections::HashMap;
 
@@ -221,7 +217,7 @@ mod tests {
 
         let response = create_completion_response(req, &docs).unwrap();
         if let Message::Response(resp) = response {
-            assert!(resp.result.is_some());
+            assert!(matches!(resp.response_kind, ResponseKind::Ok { .. }));
         } else {
             panic!("Expected a response message");
         }
