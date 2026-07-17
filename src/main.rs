@@ -139,7 +139,6 @@ fn main() -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use lsp_server::ResponseKind;
     use lsp_types::{TextDocumentIdentifier, TextDocumentPositionParams};
     use std::collections::HashMap;
 
@@ -217,7 +216,7 @@ mod tests {
 
         let response = create_completion_response(req, &docs).unwrap();
         if let Message::Response(resp) = response {
-            assert!(matches!(resp.response_kind, ResponseKind::Ok { .. }));
+            assert!(resp.response_result.is_ok());
         } else {
             panic!("Expected a response message");
         }
